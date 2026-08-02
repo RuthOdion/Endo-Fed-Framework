@@ -1,0 +1,136 @@
+# Endometriosis Federated Learning Framework Configuration
+# Complete hyperparameter settings for all experimental conditions
+
+data:
+  image_size: 224
+  channels: 3
+  normalisation:
+    imagenet_mean: [0.485, 0.456, 0.406]
+    imagenet_std: [0.229, 0.224, 0.225]
+  split_ratios:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  augmentation:
+    horizontal_flip: true
+    vertical_flip: false
+    rotation_range: 30
+    zoom_range: 0.2
+    brightness_range: 0.2
+    width_shift_range: 0.1
+    height_shift_range: 0.1
+    fill_mode: "nearest"
+  datasets:
+    glenda:
+      path: "data/raw/GLENDA_v1.5"
+      pathological_dir: "pathological"
+      non_pathological_dir: "non_pathological"
+      masks_dir: "masks"
+    ut_endo_mri:
+      path: "data/raw/UT_Endo_MRI"
+      volumes_dir: "volumes"
+      labels_file: "labels.csv"
+
+model:
+  architectures:
+    - ResNet50V2
+    - EfficientNetB0
+    - MobileNetV2
+  pretrained: "imagenet"
+  freeze_base: true
+  unfreeze_top: 20
+  dense_units: 256
+  dropout: 0.3
+  num_classes: 2
+  class_names:
+    - "non_pathological"
+    - "pathological"
+
+federated:
+  num_clients: 5
+  num_rounds: 20
+  local_epochs: 10
+  batch_size: 32
+  aggregation: "FedProx"
+  fedprox_mu: 0.01
+  non_iid:
+    dirichlet_alpha: 0.5
+  client_data_proportions:
+    - 0.30
+    - 0.25
+    - 0.20
+    - 0.15
+    - 0.10
+  early_stopping:
+    patience: 5
+    min_delta: 0.001
+    monitor: "val_auc"
+
+privacy:
+  differential_privacy:
+    enabled: true
+    mechanism: "gaussian"
+    l2_norm_clip: 1.0
+    epsilon_values:
+      - 0.5
+      - 1.0
+      - 5.0
+    delta: 1.0e-5
+    noise_multiplier_search:
+      min: 0.1
+      max: 10.0
+      tolerance: 0.01
+  secure_aggregation:
+    enabled: true
+    protocol: "additive_masking"
+    num_shares: 3
+    threshold: 2
+
+explainability:
+  method: "GradCAM"
+  target_layers:
+    ResNet50V2: "post_relu"
+    EfficientNetB0: "top_conv"
+    MobileNetV2: "out_relu"
+  overlay_alpha: 0.4
+  colourmap: "jet"
+  num_samples: 50
+
+training:
+  optimiser:
+    name: "adam"
+    learning_rate: 0.001
+    beta_1: 0.9
+    beta_2: 0.999
+    epsilon: 1.0e-7
+  lr_schedule:
+    type: "cosine_annealing"
+    min_lr: 1.0e-6
+    warmup_epochs: 2
+  loss: "categorical_crossentropy"
+  class_weight_balanced: true
+
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
+    - roc_auc
+  k_folds: 5
+  statistical_tests:
+    paired_t_test:
+      alpha: 0.05
+    effect_size:
+      method: "cohens_d"
+  confidence_interval: 0.95
+
+environment:
+  platform: "Amazon SageMaker"
+  instance_type: "ml.g4dn.xlarge"
+  gpu:
+    name: "NVIDIA T4"
+    memory_gb: 16
+  storage_gb: 50
+  python_version: "3.10"
+  random_seed: 42
