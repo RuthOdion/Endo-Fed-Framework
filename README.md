@@ -1,3 +1,4 @@
+
 # Endometriosis Federated Learning Framework
 
 A privacy-preserving federated learning framework for endometriosis diagnosis using medical imaging, with differential privacy, secure aggregation, and Grad-CAM explainability.
@@ -224,3 +225,6 @@ If you use this framework in your research, please cite:
 ## License
 
 This project is for research purposes. Please ensure compliance with medical data regulations (HIPAA, GDPR) when using real patient data.
+
+# Endo-Fed-Framework
+
